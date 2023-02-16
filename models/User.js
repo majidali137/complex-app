@@ -1,12 +1,14 @@
 const bcrypt = require("bcryptjs")
-const userCollection = require('../db').collection("users")
 const validator = require("validator")
+const userCollection = require('../db').collection("users")
 const md5 = require('md5')
 
 
-let User = function(data) {
+let User = function(data, getAvatar) {
   this.data = data
   this.errors = []
+  if (getAvatar == undefined){getAvatar = false}
+  if(getAvatar){this.getAvatar()}
 }
 
 User.prototype.cleanUp = function() {
@@ -53,6 +55,7 @@ User.prototype.login = function() {
     this.cleanUp()
     userCollection.findOne({username: this.data.username}).then((attemptedUser) => {
       if (attemptedUser && bcrypt.compareSync(this.data.password, attemptedUser.password)) {
+        this.data = attemptedUser
         this.getAvatar()
         resolve("Congrats!")
       } else {
@@ -86,6 +89,30 @@ User.prototype.register = function() {
 }
  User.prototype.getAvatar = function () {
   this.avatar = `https://gravatar.com/avatar/${md5(this.data.email)}?s=128`
+ }
+ User.findByUsername = function (username){
+  return new Promise(function (resolve,reject){
+    if (typeof (username) != "string") {
+      return
+    }
+    userCollection.findOne({username:username}).then(function (userDoc){
+      if(userDoc){
+        userDoc= new User(userDoc, true)
+        userDoc = {
+          _id: userDoc.data._id,
+          username: userDoc.data.username,
+          avatar: userDoc.avatar
+        }
+        resolve(userDoc)
+      }else{
+        reject()
+
+      }
+
+    }).catch(function (){
+      reject()
+    })
+  })
  }
 
 module.exports = User
