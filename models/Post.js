@@ -1,7 +1,9 @@
 const postCollection = require('../db').collection("posts")
+const followsCollection = require('../db').collection("follows")
 const ObjectID = require('mongodb').ObjectId
 const User = require('./User')
 const sanitizeHTML = require('sanitize-html')
+const {resolve} = require("@babel/core/lib/vendor/import-meta-resolve");
 let Post = function (data, userid, requestedPostId){
     this.data = data
     this.errors = []
@@ -170,6 +172,28 @@ Post.search = function (searchTerm) {
          }
     })
 
+}
+
+Post.countPostsByAuthor = function (id) {
+    return new Promise(async (resolve, reject) =>{
+        let postCount = await postCollection.countDocuments({author:id})
+        resolve(postCount)
+    })
+}
+
+// Create function for feed posts
+Post.getFeed =async function (id) {
+  // create an array of the user ids that the current user follows
+    let followedUsers = await followsCollection.find({authorId: new ObjectID(id)}).toArray()
+    followedUsers = followedUsers.map(function (followDoc){
+        return followDoc.followedId
+    })
+
+  // look for posts where the author is in the above array of following users
+    return Post.reusablePostQuery([
+        {$match: {author:{$in:followedUsers}}},
+        {$sort: {createdDate: -1}}
+    ])
 }
 
 module.exports = Post
