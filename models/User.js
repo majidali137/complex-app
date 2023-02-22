@@ -115,4 +115,21 @@ User.prototype.register = function() {
   })
  }
 
+ User.doesEmailExist = function(email) {
+  return new Promise(async function(resolve, reject) {
+    if (typeof(email) != "string") {
+      resolve(false)
+      return
+    }
+
+    let user = await userCollection.findOne({email: email})
+    if (user) {
+      resolve(true)
+    } else {
+      resolve(false)
+    }
+  })
+}
+
+
 module.exports = User
