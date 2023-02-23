@@ -6,6 +6,13 @@ const markdown = require('marked')
 const csrf = require('csurf')
 const app = express()
 const sanitizeHTML = require('sanitize-html')
+
+app.use(express.urlencoded({extended: false}))
+app.use(express.json())
+
+app.use('/api', require('./router-api'))
+
+
 const  store = new MongoStore({
   uri: process.env.CONNECTIONSTRING,
     databaseName: 'OurApp',
@@ -42,10 +49,6 @@ app.use(function (req,res,next){
 const router = require('./router')
 const mongodb = require("mongodb");
 const {re} = require("@babel/core/lib/vendor/import-meta-resolve");
-
-app.use(express.urlencoded({extended: false}))
-app.use(express.json())
-
 
 app.use(express.static('public'))
 app.set('views', 'views')
